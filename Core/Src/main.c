@@ -17,6 +17,7 @@
  */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include <inttypes.h>
 #include "main.h"
 #include "adc.h"
 #include "dma.h"
@@ -293,12 +294,12 @@ int main(void)
 		ssd1306_SetCursor(0, 0);  // Set cursor to the top of the display
 		ssd1306_WriteString(buffer, Font_11x18, White);
 
-		snprintf(buffer, sizeof(buffer), "L: %d",
+		snprintf(buffer, sizeof(buffer), "L: %"PRIu32"",
 				__HAL_TIM_GET_COUNTER(&htim2));
 		ssd1306_SetCursor(0, 15); // Set cursor below the voltage/current display
 		ssd1306_WriteString(buffer, Font_11x18, White);
 
-		snprintf(buffer, sizeof(buffer), "R: %d",
+		snprintf(buffer, sizeof(buffer), "R: %"PRIu32"",
 				__HAL_TIM_GET_COUNTER(&htim5));
 		ssd1306_SetCursor(0, 30); // Set cursor below the GPIO states
 		ssd1306_WriteString(buffer, Font_11x18, White);
