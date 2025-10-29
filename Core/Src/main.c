@@ -84,7 +84,7 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 // Motor control function
 void motor(int32_t left, int32_t right) {
-	// Clamp the values to be within -65535 and +65535
+	// Clamp the values to be within -65535 and +65535, 2^16
 	left = fminf(fmaxf(left, -65535), 65535);
 	right = fminf(fmaxf(right, -65535), 65535);
 
