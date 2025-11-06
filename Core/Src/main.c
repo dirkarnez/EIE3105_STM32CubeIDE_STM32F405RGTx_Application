@@ -60,7 +60,7 @@ uint16_t adc_voltage_buffer	[WINDOW_SIZE] = { 0 }; // Buffer for voltage reading
 uint16_t adc_current_buffer[WINDOW_SIZE] = { 0 }; // Buffer for current readings
 uint8_t adc_index = 0;  // Current index for buffer
 uint16_t smoothed_ADCArray[2]; // Array to store the smoothed voltage and current values
-uint8_t tx_buffer[1] = ""; // Buffer to store received data
+uint8_t tx_buffer = 0; // Buffer to store received data
 
 // OLED Display
 char buffer[20]; // String buffer for formatted output on the OLED screen
@@ -193,17 +193,11 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-//	if(huart->Instance == USART2)
-//	{
-//		memset(tx_buffer, 0, sizeof(tx_buffer));
-//		HAL_UART_Receive_IT(&huart2, &tx_buffer, 1); // Restart the reception process
-//	}
-	ssd1306_Fill(White);
-	ssd1306_UpdateScreen();
-	ssd1306_Fill(Black);
-	ssd1306_SetCursor(0, 0);
-	ssd1306_WriteString("df", Font_11x18, White);
-	ssd1306_UpdateScreen();
+	if(huart->Instance == USART2)
+	{
+		// memset(tx_buffer, 0, sizeof(tx_buffer));
+		HAL_UART_Receive_IT(&huart2, &tx_buffer, 1); // Restart the reception process
+	}
 }
 
 /* USER CODE END 0 */
@@ -279,7 +273,7 @@ int main(void)
 
 	HAL_Delay(1000);
 
-    HAL_UART_Receive_IT(&huart2,(uint8_t *)&tx_buffer, 1);
+    HAL_UART_Receive_IT(&huart2, &tx_buffer, 1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -288,7 +282,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		// ssd1306_Fill(Black);
+		ssd1306_Fill(Black);
 
 //		sprintf(buffer, "%.2fV%s%.3fA",
 //				(smoothed_ADCArray[0] * 0.00459228515 + 0.22), // Voltage calculation
@@ -308,12 +302,11 @@ int main(void)
 //		ssd1306_SetCursor(0, 30); // Set cursor below the GPIO states
 //		ssd1306_WriteString(buffer, Font_11x18, White);
 
-		// snprintf(buffer, sizeof(buffer), "%d", tx_buffer[0]);
-		//ssd1306_SetCursor(0, 0);
-		//ssd1306_WriteString(buffer, Font_11x18, White);
+		snprintf(buffer, sizeof(buffer), "%c", tx_buffer);
 
-		//ssd1306_UpdateScreen();
-
+		ssd1306_SetCursor(0, 0);
+		ssd1306_WriteString(buffer, Font_11x18, White);
+		ssd1306_UpdateScreen();
 		// Write your code below
 
 	}
