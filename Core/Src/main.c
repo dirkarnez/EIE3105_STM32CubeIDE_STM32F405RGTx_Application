@@ -17,7 +17,6 @@
  */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include <inttypes.h>
 #include "main.h"
 #include "adc.h"
 #include "dma.h"
@@ -29,6 +28,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include <ssd1306.h>
 #include <ssd1306_fonts.h>
@@ -56,10 +56,11 @@
 uint16_t ADCArray[2];  // Array to store ADC readings for voltage and current
 // Sliding Window (Moving Average) for voltage and current
 #define WINDOW_SIZE 100  // Number of readings to average
-uint16_t adc_voltage_buffer[WINDOW_SIZE] = { 0 }; // Buffer for voltage readings
+uint16_t adc_voltage_buffer	[WINDOW_SIZE] = { 0 }; // Buffer for voltage readings
 uint16_t adc_current_buffer[WINDOW_SIZE] = { 0 }; // Buffer for current readings
 uint8_t adc_index = 0;  // Current index for buffer
 uint16_t smoothed_ADCArray[2]; // Array to store the smoothed voltage and current values
+uint8_t tx_buffer[1] = ""; // Buffer to store received data
 
 // OLED Display
 char buffer[20]; // String buffer for formatted output on the OLED screen
@@ -72,8 +73,6 @@ int direction = 1; // 1 = increasing, -1 = decreasing
 // Delay counter
 uint32_t ms_count = 0;
 /* USER CODE END PV */
-
-uint8_t value = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -192,11 +191,19 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	}
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-//    HAL_UART_Transmit(&huart2, (uint8_t *)&"\r\ninto HAL_UART_RxCpltCallback\r\n",32,0xffff);    //验证进入这个函数了
-//    HAL_UART_Transmit(&huart2,(uint8_t *)&value,1,0xffff);　　　　　　//把接收到的数据通过串口发送出去
-    HAL_UART_Receive_IT(&huart1,(uint8_t *)&value,1);//重新打开串口中断
+//	if(huart->Instance == USART2)
+//	{
+//		memset(tx_buffer, 0, sizeof(tx_buffer));
+//		HAL_UART_Receive_IT(&huart2, &tx_buffer, 1); // Restart the reception process
+//	}
+	ssd1306_Fill(White);
+	ssd1306_UpdateScreen();
+	ssd1306_Fill(Black);
+	ssd1306_SetCursor(0, 0);
+	ssd1306_WriteString("df", Font_11x18, White);
+	ssd1306_UpdateScreen();
 }
 
 /* USER CODE END 0 */
@@ -239,7 +246,7 @@ int main(void)
   MX_ADC1_Init();
   MX_I2C1_Init();
   MX_TIM13_Init();
-  MX_USART1_UART_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 	// Start right PWM channels
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
@@ -272,8 +279,7 @@ int main(void)
 
 	HAL_Delay(1000);
 
-    HAL_UART_Receive_IT(&huart1,(uint8_t *)&value,1);
-
+    HAL_UART_Receive_IT(&huart2,(uint8_t *)&tx_buffer, 1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -282,29 +288,31 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		ssd1306_Fill(Black);
+		// ssd1306_Fill(Black);
 
-		sprintf(buffer, "%.2fV%s%.3fA",
-				(smoothed_ADCArray[0] * 0.00459228515 + 0.22), // Voltage calculation
-				(smoothed_ADCArray[0] * 0.00459228515 + 0.22) < 7.5 ?
-						"TooLow" : "", // Check if voltage is lower than 7.5V
-				((smoothed_ADCArray[1] * 0.8 - 2500) / 185) < 0 ?
-						0 : ((smoothed_ADCArray[1] * 0.8 - 2500) / 185)); // Current calculation
+//		sprintf(buffer, "%.2fV%s%.3fA",
+//				(smoothed_ADCArray[0] * 0.00459228515 + 0.22), // Voltage calculation
+//				(smoothed_ADCArray[0] * 0.00459228515 + 0.22) < 7.5 ?
+//						"TooLow" : "", // Check if voltage is lower than 7.5V
+//				((smoothed_ADCArray[1] * 0.8 - 2500) / 185) < 0 ?
+//						0 : ((smoothed_ADCArray[1] * 0.8 - 2500) / 185)); // Current calculation
+//
+//		ssd1306_SetCursor(0, 0);  // Set cursor to the top of the display
+//		ssd1306_WriteString(buffer, Font_11x18, White);
+//
+//		snprintf(buffer, sizeof(buffer), "L: %"PRIu32"", __HAL_TIM_GET_COUNTER(&htim2));
+//		ssd1306_SetCursor(0, 15); // Set cursor below the voltage/current display
+//		ssd1306_WriteString(buffer, Font_11x18, White);
+//
+//		snprintf(buffer, sizeof(buffer), "R: %"PRIu32"", __HAL_TIM_GET_COUNTER(&htim5));
+//		ssd1306_SetCursor(0, 30); // Set cursor below the GPIO states
+//		ssd1306_WriteString(buffer, Font_11x18, White);
 
-		ssd1306_SetCursor(0, 0);  // Set cursor to the top of the display
-		ssd1306_WriteString(buffer, Font_11x18, White);
+		// snprintf(buffer, sizeof(buffer), "%d", tx_buffer[0]);
+		//ssd1306_SetCursor(0, 0);
+		//ssd1306_WriteString(buffer, Font_11x18, White);
 
-		snprintf(buffer, sizeof(buffer), "L: %"PRIu32"",
-				__HAL_TIM_GET_COUNTER(&htim2));
-		ssd1306_SetCursor(0, 15); // Set cursor below the voltage/current display
-		ssd1306_WriteString(buffer, Font_11x18, White);
-
-		snprintf(buffer, sizeof(buffer), "R: %"PRIu32"",
-				__HAL_TIM_GET_COUNTER(&htim5));
-		ssd1306_SetCursor(0, 30); // Set cursor below the GPIO states
-		ssd1306_WriteString(buffer, Font_11x18, White);
-
-		ssd1306_UpdateScreen();
+		//ssd1306_UpdateScreen();
 
 		// Write your code below
 
